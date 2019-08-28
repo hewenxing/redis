@@ -1,0 +1,27 @@
+redis
+redis官网 https://redis.io/  下载最新版
+cd /usr/local/src/
+wget http://download.redis.io/releases/redis-5.0.5.tar.gz
+yum -y install gcc
+tar -zxvf redis-5.0.5.tar.gz
+cd redis-5.0.5
+make && make install
+cp /usr/local/src/redis-5.0.5/redis.conf /usr/local/redis-cluster/9000
+cp /usr/local/src/redis-5.0.5/redis.conf /usr/local/redis-cluster/9001
+修改配置文件(9000和9001文件夹下各一个配置文件 都需要修改，9001参照9000的配置只需要把端口改了)
+vim /usr/local/redis-cluster/9000/redis.conf
+daemonize    yes                     #守护线程 ，后台运行redis
+pidfile  /var/run/redis_9000.pid      
+port  9000                             #每个节点的端口号
+cluster-enabled  yes                   #开启集群模式
+cluster-config-file  nodes_9000.conf   #集群节点的配置
+cluster-node-timeout  5000         #节点请求超时时间
+appendonly  yes                  #aof日志每一个操作都记录模式
+bind 0.0.0.0                #开启网络，保证其他网络可以访问该机子
+scp -r /usr/local/redis-cluster/ 172.16.35.36:/usr/local/
+scp -r /usr/local/redis-cluster/ 172.16.35.37:/usr/local/
+启动每台机器上的两个节点
+redis-server /usr/local/redis-cluster/9000/redis.conf
+redis-server /usr/local/redis-cluster/9001/redis.conf
+redis-cli --cluster create 172.16.35.81:9000 172.16.35.36:9000 172.16.35.37:9000 172.16.35.81:9001 172.16.35.36:9001 172.16.35.37:
+9001 --cluster-replicas 1      #创建集群，--cluster-replicas 1 指定从库数量1    创建顺序三个主，三个从，前面三个是主后面三个是从
